@@ -5,6 +5,7 @@ msg.classList.add('message');
 
 let lastPress = 0, // if last button is operator then 1 otherwise 0
     deci = 0,
+    cdeci = 0, // if current key pressed is decimal
     cache = 0,
     cacheForDisplay = 0,
     firstOperand = 0,
@@ -13,12 +14,14 @@ let lastPress = 0, // if last button is operator then 1 otherwise 0
     secondAssign = 0,
     operator = "",
     equal = 0, // if equals button was clicked then 1 otherwise 0
-    result = 0;
+    result = 0,
+    denominator = 10;
 
 function inital() {
 
     lastPress = 0;
     deci = 0;
+    cdeci = 0;
     cache = 0;
     cacheForDisplay = 0;
     firstOperand = 0;
@@ -28,6 +31,7 @@ function inital() {
     operator = "";
     equal = 0;
     result = 0;
+    denominator = 10;
 
     msg.remove(); // initial msg
     msg.textContent = `${result}`;
@@ -41,7 +45,7 @@ function butonpress(e) {
 
         if (e.target.getAttribute('id') !== 'decimal') { // number
 
-            if (cacheForDisplay == 1) {
+            if (cacheForDisplay == 1) { //  after = onlye new numer or operator allow not editing the result
                 cacheForDisplay = 0;
 
                 if (equal == 0 && firstAssign == 0) {
@@ -53,14 +57,45 @@ function butonpress(e) {
 
             }
 
+            if (deci == 0) {
+
+                cache = cache * 10 + parseFloat(e.target.value);
+
+            } else {
+
+                if (denominator == 10) {
+
+                    cache = cache + parseFloat(e.target.value) / denominator;
+                    denominator = denominator * 10;
+
+                }
+
+            }
+
             lastPress = 0;
-            cache = cache * 10 + parseFloat(e.target.value);
+            cdeci = 0;
 
             show();
 
-        } else if(e.target.getAttribute('id') == 'decimal' && deci == 0) {
+        } else if (e.target.getAttribute('id') == 'decimal' && deci == 0 && cache % 1 == 0) { // decimal 
+
+            if (cacheForDisplay == 1) { //  after = only new numer or operator allow not editing the result
+                cacheForDisplay = 0;
+
+                if (equal == 0 && firstAssign == 0) {
+                    firstOperand = cache;
+                    firstAssign = 1;
+                }
+
+                cache = 0;
+
+            }
 
             deci = 1;
+            cdeci = 1;
+            denominator = 10;
+
+            show();
 
         }
     } else if (e.target.getAttribute('class') == "operator") { // operator
@@ -94,15 +129,19 @@ function butonpress(e) {
         lastPress = 1;
         equal = 0;
         deci = 0;
+        cdeci = 0;
 
         show();
 
-    } else if (e.target.getAttribute('class') == "equals") {
+    } else if (e.target.getAttribute('class') == "equals") { // equals
 
         equal = 1;
-        deci = 0;
+        cdeci = 0;
 
         operate();
+
+        if(cache % 1 !== 0) deci = 1;
+        else deci = 0;
 
         cache = result;
         cacheForDisplay = 1;
@@ -132,16 +171,38 @@ function butonpress(e) {
 
         } else if (firstAssign == 1 && lastPress == 0) {
 
-            if (Math.floor(cache / 10) !== 0) {
+           if(cdeci == 0) {
 
-                cache = Math.floor(cache / 10);
+            if(cache % 1 == 0) {
 
-            } else {
+                if (Math.floor(cache / 10) !== 0) {
+    
+                    cache = Math.floor(cache / 10);
+    
+                } else {
+    
+                    cache = 0;
+                    lastPress = 1;
+    
+                }
+    
+               } else {
+    
+                cdeci = 1;
+                deci = 1;
+                cache = Math.floor(cache);
+                denominator = 10;
+                cacheForDisplay = 0;
+    
+               }
 
-                cache = 0;
-                lastPress = 1;
+           } else {
 
-            }
+            cdeci = 0;
+            deci = 0;
+
+           }
+
         } else if (firstAssign == 1 && lastPress == 1) {
 
             operator = '';
@@ -153,8 +214,29 @@ function butonpress(e) {
 
         } else {
 
-            cache = Math.floor(cache / 10);
-            cacheForDisplay = 0;
+          if(cdeci==0) {
+
+            if(cache % 1 == 0) {
+
+                cache = Math.floor(cache / 10);
+                cacheForDisplay = 0;
+    
+               } else {
+    
+                cdeci = 1;
+                deci = 1;
+                cache = Math.floor(cache);
+                denominator = 10;
+                cacheForDisplay = 0;
+    
+               }
+
+          } else {
+
+            cdeci = 0;
+            deci = 0;
+
+          }
 
         }
 
@@ -177,7 +259,7 @@ function operate() {
 
         } else if (operator == '*') { //mul
 
-            result = firstOperand * secondOperand;
+            result = parseFloat((firstOperand * secondOperand).toFixed(1));
 
         } else if (operator == '/' && secondOperand !== 0) { // divide
 
@@ -211,7 +293,7 @@ function operate() {
 
             } else if (operator == '*') { //mul
 
-                result = firstOperand * cache;
+                result = parseFloat((firstOperand * cache).toFixed(1));
 
             } else if (operator == '/' && cache !== 0) { // divide
 
@@ -228,35 +310,66 @@ function operate() {
 
 function show() { // display
 
-    if (firstAssign == 0 && lastPress == 1) {
+    if (cdeci == 0) {
 
-        msg.remove();
-        msg.textContent = `${cache} ${operator}`;
-        display.appendChild(msg);
+        if (firstAssign == 0 && lastPress == 1) { // after 2nd operator
 
-    } else if (firstAssign == 1 && lastPress == 0) {
+            msg.remove();
+            msg.textContent = `${cache} ${operator}`;
+            display.appendChild(msg);
 
-        msg.remove();
-        msg.textContent = `${firstOperand} ${operator} ${cache}`;
-        display.appendChild(msg);
+        } else if (firstAssign == 1 && lastPress == 0) { // during 2nd operand
 
-    } else if (firstAssign == 1 && lastPress == 1) {
+            msg.remove();
+            msg.textContent = `${firstOperand} ${operator} ${cache}`;
+            display.appendChild(msg);
 
-        msg.remove();
-        msg.textContent = `${firstOperand} ${operator}`;
-        display.appendChild(msg);
+        } else if (firstAssign == 1 && lastPress == 1) { // after 1st operator
 
+            msg.remove();
+            msg.textContent = `${firstOperand} ${operator}`;
+            display.appendChild(msg);
+
+        } else { // during 1st operand
+
+            msg.remove();
+            msg.textContent = `${cache}`;
+            display.appendChild(msg);
+
+        }
     } else {
 
-        msg.remove();
-        msg.textContent = `${cache}`;
-        display.appendChild(msg);
-        
+        if (firstAssign == 0 && lastPress == 1) {
+
+            msg.remove();
+            msg.textContent = `${cache} ${operator}`;
+            display.appendChild(msg);
+
+        } else if (firstAssign == 1 && lastPress == 0) {
+
+            msg.remove();
+            msg.textContent = `${firstOperand} ${operator} ${cache}.`;
+            display.appendChild(msg);
+
+        } else if (firstAssign == 1 && lastPress == 1) {
+
+            msg.remove();
+            msg.textContent = `${firstOperand} ${operator}`;
+            display.appendChild(msg);
+
+        } else {
+
+            msg.remove();
+            msg.textContent = `${cache}.`;
+            display.appendChild(msg);
+
+        }
+
     }
 }
 
 pressed.forEach(key => {
 
     key.addEventListener('click', butonpress);
-    
+
 });
