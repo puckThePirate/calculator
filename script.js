@@ -45,10 +45,10 @@ function butonpress(e) {
 
         if (e.target.getAttribute('id') !== 'decimal') { // number
 
-            if (cacheForDisplay == 1) { //  after = onlye new numer or operator allow not editing the result
+            if (cacheForDisplay == 1) { //  after = onlye new number or operator allow not editing the result
                 cacheForDisplay = 0;
 
-                if (equal == 0 && firstAssign == 0) {
+                if (equal == 0 && firstAssign == 0 && cache !== 'error') {
                     firstOperand = cache;
                     firstAssign = 1;
                 }
@@ -79,7 +79,7 @@ function butonpress(e) {
 
         } else if (e.target.getAttribute('id') == 'decimal' && deci == 0 && cache % 1 == 0) { // decimal 
 
-            if (cacheForDisplay == 1) { //  after = only new numer or operator allow not editing the result
+            if (cacheForDisplay == 1) { //  after = only new number or operator allow not editing the result
                 cacheForDisplay = 0;
 
                 if (equal == 0 && firstAssign == 0) {
@@ -99,6 +99,10 @@ function butonpress(e) {
 
         }
     } else if (e.target.getAttribute('class') == "operator") { // operator
+
+        if (cache == 'error') {
+            return;
+        }
 
         if (firstAssign == 0 && lastPress !== 1) {
 
@@ -140,7 +144,7 @@ function butonpress(e) {
 
         operate();
 
-        if(cache % 1 !== 0) deci = 1;
+        if (cache % 1 !== 0) deci = 1;
         else deci = 0;
 
         cache = result;
@@ -161,6 +165,10 @@ function butonpress(e) {
 
     } else if (e.target.getAttribute('class') == "delete") { // delete
 
+        if (cache == 'error') {
+            return;
+        }
+
         if (firstAssign == 0 && lastPress == 1) {
 
             operator = '';
@@ -171,37 +179,37 @@ function butonpress(e) {
 
         } else if (firstAssign == 1 && lastPress == 0) {
 
-           if(cdeci == 0) {
+            if (cdeci == 0) {
 
-            if(cache % 1 == 0) {
+                if (cache % 1 == 0) {
 
-                if (Math.floor(cache / 10) !== 0) {
-    
-                    cache = Math.floor(cache / 10);
-    
+                    if (Math.floor(cache / 10) !== 0) {
+
+                        cache = Math.floor(cache / 10);
+
+                    } else {
+
+                        cache = 0;
+                        lastPress = 1;
+
+                    }
+
                 } else {
-    
-                    cache = 0;
-                    lastPress = 1;
-    
+
+                    cdeci = 1;
+                    deci = 1;
+                    cache = Math.floor(cache);
+                    denominator = 10;
+                    cacheForDisplay = 0;
+
                 }
-    
-               } else {
-    
-                cdeci = 1;
-                deci = 1;
-                cache = Math.floor(cache);
-                denominator = 10;
-                cacheForDisplay = 0;
-    
-               }
 
-           } else {
+            } else {
 
-            cdeci = 0;
-            deci = 0;
+                cdeci = 0;
+                deci = 0;
 
-           }
+            }
 
         } else if (firstAssign == 1 && lastPress == 1) {
 
@@ -214,29 +222,29 @@ function butonpress(e) {
 
         } else {
 
-          if(cdeci==0) {
+            if (cdeci == 0) {
 
-            if(cache % 1 == 0) {
+                if (cache % 1 == 0) {
 
-                cache = Math.floor(cache / 10);
-                cacheForDisplay = 0;
-    
-               } else {
-    
-                cdeci = 1;
-                deci = 1;
-                cache = Math.floor(cache);
-                denominator = 10;
-                cacheForDisplay = 0;
-    
-               }
+                    cache = Math.floor(cache / 10);
+                    cacheForDisplay = 0;
 
-          } else {
+                } else {
 
-            cdeci = 0;
-            deci = 0;
+                    cdeci = 1;
+                    deci = 1;
+                    cache = Math.floor(cache);
+                    denominator = 10;
+                    cacheForDisplay = 0;
 
-          }
+                }
+
+            } else {
+
+                cdeci = 0;
+                deci = 0;
+
+            }
 
         }
 
@@ -315,7 +323,11 @@ function show() { // display
         if (firstAssign == 0 && lastPress == 1) { // after 2nd operator
 
             msg.remove();
-            msg.textContent = `${cache} ${operator}`;
+            if (cache !== 'error') {
+                msg.textContent = `${cache} ${operator}`;
+            } else {
+                msg.textContent = `${cache}`;
+            }
             display.appendChild(msg);
 
         } else if (firstAssign == 1 && lastPress == 0) { // during 2nd operand
